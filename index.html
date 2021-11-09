@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        .col {display: inline-block; }
+        .titre, .auteur, .lastAuteur, .nombres {margin: 0px 10px; }
+        .titre {width: 45%; }
+        .auteur, .lastAuteur {width: 18%; }
+        .nombres {width: 8%; }
+        li {display: block; margin: 10px 0px;}
+        ul {margin: 0px; padding:0px;}
+        .inf {margin-left: 30px; }
+        .sup {background-color: #F0F0F0;}
+        .inf {background-color: #FFF;}
+        #formAjoutDiscussion {display:none;}
+    </style>
+</head>
+<body>
+    <h1>Forum du TP2</h1>
+    <div id="formAjoutDiscussion">
+        <h2>Ajout d'une discussion</h2>
+    </div>
+    <div id="main">
+        <div style="margin-bottom: 20px; padding-bottom: 8px; border-bottom: 2px solid silver;">
+            <button id="ajout">Ajouter une discussion</button><br><br>
+            <p class="col titre">Discussion</p>
+            <p class="col auteur">Lancée par</p>
+            <p class="col lastAuteur">Dernière réponse</p>
+            <p class="col nombres">Réponses</p>
+        </div>
+
+        <div id="resultat">
+            <h2>ICI</h2>
+        </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script>
+         $(document).ready(function () {
+            GET_data();
+            $("#ajout").click(function() {
+                $("#formAjoutDiscussion").show();
+                $("#main").hide();
+             });
+
+        });
+        function GET_data() {
+            fetch('/api/messages')
+            .then(res => res.json())
+            .then(data => {
+                console.log(data);
+                affichageMessages(data);
+            })
+            .catch(erreur => console.log(erreur));
+        }
+
+         function composeListe(val) {
+             const maxLength = 60;
+             let titre = val.titre;
+             let tabComm = val.commentaires;
+             let nombres = tabComm.length;
+             let affDate = new Date(val.date).toLocaleString();
+             let dernierAuteur = (nombres>0)?tabComm[nombres-1].auteur:val.auteur;
+             if (val.titre.length > maxLength) {
+                titre = titre.substring(0,maxLength) + "...";
+             }
+             let description = `
+                    <fieldset style="display: inline-block; width:95%;">
+                        <legend> Discussion - par ${val.auteur} - ${affDate}
+                        <p><strong>${val.titre}</strong></p>
+                        <p>${val.description}</p>
+                    </fieldset>`; 
+             let affTabComm = "";
+             for (i=0; i<tabComm.length; i++) {
+                 affDate = new Date(tabComm[i].date).toLocaleString();
+                 affTabComm += `
+                    <fieldset style="display: inline-block; width:90%; margin-left: 20px; border-color: blue;">
+                        <legend> Réponse ${i+1} - par ${tabComm[i].auteur} - ${affDate} </legend> 
+                        <p>${tabComm[i].commentaire}</p>
+                    </fieldset>`;
+             };
+
+            return `<li class="sup">
+                <span class="col titre">${titre}</span> 
+                <span class="col auteur">(${val.auteur})</span> 
+                <span class="col lastAuteur">(${dernierAuteur}) </span> 
+                <span class="col nombres">${nombres}  </span> 
+                 <ul class="inf">
+                    <li>${description}</li><li>${affTabComm}</li>
+                 </ul>
+                 </li>`;
+         }
+         function affichageMessages(data) {
+             let titres = data.map(val => composeListe(val));
+             titres = '<ul>' + titres + '</ul>';
+             titres = titres.replace(/li>,/g,'li>');
+             $("#resultat").html(titres);
+             $(".inf").hide();
+             $(".sup").click(function (){
+                $(".inf").hide();
+                $(this).children("ul").show();    
+                $(".formAddReponse").hide(); 
+             });
+         }
+
+    </script>
+</body>
+</html> 
